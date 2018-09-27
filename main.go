@@ -15,9 +15,11 @@ import (
 func main() {
 	var channel, server, message string
 	var count int
+	var tls bool
 	flag.StringVar(&server, "server", "chat.freenode.net:6697", "the server:port pair")
 	flag.StringVar(&channel, "channel", "##xmtp.net", "the channel")
 	flag.StringVar(&message, "message", "hello\nI am new\nI want to destroy the world.", "the message")
+	flag.BoolVar(&tls, "tls", false, "the socket expects tls")
 	flag.IntVar(&count, "count", 10, "the count")
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
@@ -28,7 +30,7 @@ func main() {
 	//	irccon.Log = log.New(ioutil.Discard, "", 0)
 	irccon.VerboseCallbackHandler = true
 	irccon.Debug = true
-	irccon.UseTLS = true
+	irccon.UseTLS = tls
 	irccon.AddCallback("001", func(e *irc.Event) { irccon.Join(channel) })
 	irccon.AddCallback("366", func(e *irc.Event) {
 		spltmsg := strings.Split(message, "\n")

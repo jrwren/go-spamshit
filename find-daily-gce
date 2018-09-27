@@ -1,0 +1,4 @@
+addr=$[$(wc -l releasesTable | awk '{print $1}')-2]
+sed -i "${addr}s/,\$//" releasesTable
+jq -r '.aaData[]| select(.[0]!="Amazon AWS") | select(.[0]!="Microsoft Azure") |
+    select (.[1]=="us-east1") |.[7]  ' releasesTable | head -1

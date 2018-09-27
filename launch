@@ -1,0 +1,35 @@
+#!/bin/bash
+
+addr=$[$(wc -l releasesTable | awk '{print $1}')-2]
+sed -i "${addr}s/,\$//" releasesTable
+image=$(jq -r '.aaData[]| select(.[0]!="Amazon AWS") |
+    select(.[0]!="Microsoft Azure") | select (.[1]=="us-east1") |
+        .[7]  ' releasesTable | head -1)
+#gcloud compute instances create spamshit \
+#    --metadata "ssh-keys=j:$(cat ~/.ssh/id_rsa*.pub)" --image "$image" \
+#    --image-project "ubuntu-os-cloud" --zone us-east1-b
+
+## no idea in what image-project these ubuntu cloud images live, so...
+
+
+    #--network-tier=PREMIUM \
+RESULT=$(gcloud beta compute --project=starlit-summit-510 instances create spamshit \
+    --zone=us-central1-c --machine-type=f1-micro --subnet=default \
+    --maintenance-policy=MIGRATE \
+    --service-account=905931584585-compute@developer.gserviceaccount.com \
+    --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+    --tags=http-server,https-server \
+    --image=ubuntu-minimal-1804-bionic-v20180917 \
+    --image-project=ubuntu-os-cloud \
+    --boot-disk-size=10GB --boot-disk-type=pd-standard \
+    --boot-disk-device-name=spamshit \
+    --metadata "ssh-keys=j:$(cat ~/.ssh/id_rsa*.pub)"
+    )
+echo $RESULT
+
+IP=$(echo $RESULT | awk '/spamshit/{print $5}')
+scp main j@$IP:.
+ssh j@$IP:. \
+./main -server irc.thegleek.com:6667 -message "thegleek is a bully and should be stripped of power\nBullying is the de facto appropriation of power by a party who does not have that power de jure.\nNo sane society can tolerate handing authority to children, Lord of the Flies was not an instruction book. However, we, as a society, have effectively delegated authority to “manage” other children down to young children, after all, who does the average age-segregated child spend more waking hours around, biological family members, an individual teacher/instructor/day care employee, or other age-segregated children? In the modern litigation-friendly environment, schools, day cares, programs, (Henceforth referred to as “Institutions”) all are limited in what levels of “care, custody, and control” they can exercise, but the same logic applies to other children, after all, if one child hits another, that is obviously not assault in the mens rea sense.\nThat leaves a vast gulf between the perceived and actual physical power of the Institutions, and more importantly, their front-line personnel. To paint an all too realistic situation, if a child is perceived as troublesome, how hard is it for an underpaid employee to “turn a blind eye” while another child hits them? The victim, whatever their “offense” is, has no review, no appeal, no recourse to the courts, the event never took place as far as our society is concerned. Project this logic outwards and you end up with a “Lord of the Flies” situation." -channel '#oontz' -count 1000
+
+gcloud beta compute instances delete spamshit  --zone=us-central1-c  --delete-disks=all
