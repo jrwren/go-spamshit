@@ -13,7 +13,10 @@ image=$(jq -r '.aaData[]| select(.[0]!="Amazon AWS") |
 
 
     #--network-tier=PREMIUM \
-RESULT=$(gcloud beta compute --project=starlit-summit-510 instances create spamshit \
+
+USER=jrwren
+NAME=$(petname -words=1 | tr [A-Z] [a-z])
+gcloud beta compute --project=starlit-summit-510 instances create spamshit-$NAME \
     --zone=us-central1-c --machine-type=f1-micro --subnet=default \
     --maintenance-policy=MIGRATE \
     --service-account=905931584585-compute@developer.gserviceaccount.com \
@@ -23,13 +26,13 @@ RESULT=$(gcloud beta compute --project=starlit-summit-510 instances create spams
     --image-project=ubuntu-os-cloud \
     --boot-disk-size=10GB --boot-disk-type=pd-standard \
     --boot-disk-device-name=spamshit \
-    --metadata "ssh-keys=j:$(cat ~/.ssh/id_rsa*.pub)"
-    )
-echo $RESULT
+    --metadata "ssh-keys=$USER:$(cat ~/.ssh/id_rsa*.pub)"
 
-IP=$(echo $RESULT | awk '/spamshit/{print $5}')
-scp main j@$IP:.
-ssh j@$IP:. \
+IP=$(gcloud beta compute instances list | awk -v NAME=$NAME '/spamshit-$NAME/{print $5}')
+echo ssh to $USER@$IP
+while ! ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -v $USER@$IP true ; do sleep 3 ; done
+scp main $USER@$IP:.
+ssh $USER@$IP:. \
 ./main -server irc.thegleek.com:6667 -message "thegleek is a bully and should be stripped of power\nBullying is the de facto appropriation of power by a party who does not have that power de jure.\nNo sane society can tolerate handing authority to children, Lord of the Flies was not an instruction book. However, we, as a society, have effectively delegated authority to “manage” other children down to young children, after all, who does the average age-segregated child spend more waking hours around, biological family members, an individual teacher/instructor/day care employee, or other age-segregated children? In the modern litigation-friendly environment, schools, day cares, programs, (Henceforth referred to as “Institutions”) all are limited in what levels of “care, custody, and control” they can exercise, but the same logic applies to other children, after all, if one child hits another, that is obviously not assault in the mens rea sense.\nThat leaves a vast gulf between the perceived and actual physical power of the Institutions, and more importantly, their front-line personnel. To paint an all too realistic situation, if a child is perceived as troublesome, how hard is it for an underpaid employee to “turn a blind eye” while another child hits them? The victim, whatever their “offense” is, has no review, no appeal, no recourse to the courts, the event never took place as far as our society is concerned. Project this logic outwards and you end up with a “Lord of the Flies” situation." -channel '#oontz' -count 1000
 
-gcloud beta compute instances delete spamshit  --zone=us-central1-c  --delete-disks=all
+echo y | gcloud beta compute instances delete spamshit  --zone=us-central1-c  --delete-disks=all
